@@ -9,8 +9,8 @@ const port = process.env.PORT || 3000;
 
 // Configuración del middleware de autenticación
 const checkAuth = auth({
-  audience: '__YOUR_CLERK_API_IDENTIFIER__', // Reemplaza con tu API Identifier de Clerk
-  issuerBaseURL: `https://${process.env.CLERK_DOMAIN}`, // Reemplaza con tu Clerk Domain
+  audience: 'clerk',
+  issuerBaseURL: `https://${process.env.CLERK_DOMAIN}`, 
   tokenSigningAlg: 'RS256',
 });
 
