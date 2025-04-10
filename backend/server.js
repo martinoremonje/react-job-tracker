@@ -38,7 +38,7 @@ app.post('/api/jobs', checkAuth, async (req, res) => {
   }
 });
 
-app.get('/api/jobs', async (req, res) => { // Por ahora, dejamos esta ruta sin autenticación para que todos puedan ver los trabajos
+app.get('/api/jobs', checkAuth, async (req, res) => { // Por ahora, dejamos esta ruta sin autenticación para que todos puedan ver los trabajos
   try {
     const jobs = await Job.find();
     res.json(jobs);
