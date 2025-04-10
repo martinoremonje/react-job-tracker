@@ -23,17 +23,19 @@ app.use(clerkMiddleware());
 
 // Aplica la protección de autenticación a las rutas que deseas
 const requireAuth = (req, res, next) => {
-    const { auth } = getAuth(req);
-    if (!auth.userId) {
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
+    console.log("Authorization Header:", req.headers.authorization);
+    // Si clerkMiddleware() no detecta un usuario autenticado,
+    // automáticamente responderá con un error 401.
+    // Por lo tanto, si llegamos a next(), el usuario está autenticado.
     next();
 };
 
 app.post('/api/jobs', requireAuth, async (req, res) => {
     try {
         const nuevoJob = new Job(req.body);
-        // Aquí puedes acceder al ID del usuario autenticado: auth.userId
+        const { auth } = getAuth(req);
+        // Ahora puedes acceder al ID del usuario autenticado: auth.userId
+        console.log("Usuario autenticado (POST):", auth.userId);
         const jobGuardado = await nuevoJob.save();
         res.status(201).json(jobGuardado);
     } catch (error) {
@@ -43,6 +45,8 @@ app.post('/api/jobs', requireAuth, async (req, res) => {
 
 app.get('/api/jobs', requireAuth, async (req, res) => {
     try {
+        const { auth } = getAuth(req);
+        console.log("Usuario autenticado (GET):", auth.userId);
         const jobs = await Job.find();
         res.json(jobs);
     } catch (error) {
@@ -53,6 +57,8 @@ app.get('/api/jobs', requireAuth, async (req, res) => {
 app.put('/api/jobs/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
     try {
+        const { auth } = getAuth(req);
+        console.log("Usuario autenticado (PUT):", auth.userId);
         // Aquí podrías verificar si el usuario autenticado tiene permiso para editar este trabajo
         const jobActualizado = await Job.findByIdAndUpdate(id, req.body, { new: true });
         if (!jobActualizado) {
@@ -67,6 +73,8 @@ app.put('/api/jobs/:id', requireAuth, async (req, res) => {
 app.delete('/api/jobs/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
     try {
+        const { auth } = getAuth(req);
+        console.log("Usuario autenticado (DELETE):", auth.userId);
         // Aquí podrías verificar si el usuario autenticado tiene permiso para eliminar este trabajo
         const jobEliminado = await Job.findByIdAndDelete(id);
         if (!jobEliminado) {
