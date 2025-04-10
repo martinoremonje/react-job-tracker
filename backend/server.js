@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Job = require('./models/jobs.model.js');
 require('dotenv').config();
 const { auth } = require('express-oauth2-jwt-bearer');
+const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,6 +15,14 @@ const checkAuth = auth({
   tokenSigningAlg: 'RS256',
 });
 
+const corsOptions = {
+  origin: 'http://localhost:5173', // Para desarrollo
+  // origin: 'https://tu-app-de-vercel.vercel.app', // Para producción (reemplaza con tu URL de Vercel)
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true, // Si necesitas enviar cookies o encabezados de autorización
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Aplica el middleware de autenticación a las rutas que deseas proteger
