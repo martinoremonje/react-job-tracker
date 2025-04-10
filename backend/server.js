@@ -2,18 +2,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Job = require('./models/jobs.model.js');
 require('dotenv').config();
-const { auth } = require('express-oauth2-jwt-bearer');
+const { clerkMiddleware, getAuth } = require('@clerk/express');
 const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 3000;
-
-// Configuración del middleware de autenticación
-const checkAuth = auth({
-    audience: 'convex', // Or your specific API Identifier if configured in Clerk
-    issuerBaseURL: `https://engaging-piranha-55.clerk.accounts.dev`, // <--- CAMBIO IMPORTANTE: Usa tu Frontend API URL (Clerk Domain)
-    tokenSigningAlg: 'RS256',
-});
 
 const corsOptions = {
     origin: 'http://localhost:5173', // Para desarrollo
@@ -25,12 +18,22 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Aplica el middleware de autenticación a las rutas que deseas proteger
-app.post('/api/jobs', checkAuth, async (req, res) => {
+// Aplica el clerkMiddleware para habilitar la autenticación de Clerk
+app.use(clerkMiddleware());
+
+// Aplica la protección de autenticación a las rutas que deseas
+const requireAuth = (req, res, next) => {
+    const { auth } = getAuth(req);
+    if (!auth.userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    next();
+};
+
+app.post('/api/jobs', requireAuth, async (req, res) => {
     try {
         const nuevoJob = new Job(req.body);
-        // Aquí podrías guardar información del usuario que creó el trabajo si lo deseas
-        // nuevoJob.createdBy = req.auth?.payload?.sub; // El 'sub' claim del JWT suele ser el ID del usuario
+        // Aquí puedes acceder al ID del usuario autenticado: auth.userId
         const jobGuardado = await nuevoJob.save();
         res.status(201).json(jobGuardado);
     } catch (error) {
@@ -38,7 +41,7 @@ app.post('/api/jobs', checkAuth, async (req, res) => {
     }
 });
 
-app.get('/api/jobs', checkAuth, async (req, res) => { // <--- NO HICE CAMBIO AQUI, YA ESTABA checkAuth
+app.get('/api/jobs', requireAuth, async (req, res) => {
     try {
         const jobs = await Job.find();
         res.json(jobs);
@@ -47,7 +50,7 @@ app.get('/api/jobs', checkAuth, async (req, res) => { // <--- NO HICE CAMBIO AQU
     }
 });
 
-app.put('/api/jobs/:id', checkAuth, async (req, res) => {
+app.put('/api/jobs/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
     try {
         // Aquí podrías verificar si el usuario autenticado tiene permiso para editar este trabajo
@@ -61,7 +64,7 @@ app.put('/api/jobs/:id', checkAuth, async (req, res) => {
     }
 });
 
-app.delete('/api/jobs/:id', checkAuth, async (req, res) => {
+app.delete('/api/jobs/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
     try {
         // Aquí podrías verificar si el usuario autenticado tiene permiso para eliminar este trabajo
