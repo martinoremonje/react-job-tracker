@@ -10,7 +10,7 @@ const port = process.env.PORT || 3000;
 
 // Configuración del middleware de autenticación
 const checkAuth = auth({
-    audience: 'clerk', // Or your specific API Identifier if configured in Clerk
+    audience: 'convex', // Or your specific API Identifier if configured in Clerk
     issuerBaseURL: `https://engaging-piranha-55.clerk.accounts.dev`, // <--- CAMBIO IMPORTANTE: Usa tu Frontend API URL (Clerk Domain)
     tokenSigningAlg: 'RS256',
 });
