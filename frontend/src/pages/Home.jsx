@@ -1,39 +1,67 @@
-import React, { useEffect } from 'react';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import React, { useEffect, useState } from 'react';
+import { useAuth, useClerk } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 
-const Home = () => {
-  const { isSignedIn, isLoaded: authLoaded } = useAuth();
-  const { isLoaded: userLoaded } = useUser();
+const HomePage = () => {
+  const { isSignedIn, isLoaded } = useAuth();
+  const { signOut } = useClerk(); // Importa signOut si necesitas cerrar sesión
   const navigate = useNavigate();
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const backendUrlLocal = 'http://localhost:3000';
 
   useEffect(() => {
-    if (!authLoaded || !userLoaded) {
-      // Aún cargando la información del usuario, no hagas nada todavía
-      return;
+    if (!isLoaded) {
+      return; // Espera a que se cargue el estado de autenticación
     }
 
     if (!isSignedIn) {
-      // Si el usuario no está conectado, redirige a /login
-      navigate('/login');
+      setTimeout(() => {
+        navigate('/login'); // Redirige a la página de inicio de sesión después de un breve retraso
+      }, 100); // Espera 100 milisegundos (ajusta si es necesario)
+      return;
     }
-    // No es necesario un else aquí, si está conectado, el componente se renderizará normalmente
-  }, [isSignedIn, authLoaded, userLoaded, navigate]);
 
-  // Mientras se carga la información del usuario, puedes mostrar un indicador de carga
-  if (!authLoaded || !userLoaded) {
-    return <div>Cargando información del usuario...</div>;
+    const fetchJobs = async () => {
+      try {
+        const response = await fetch(`${backendUrlLocal}/api/jobs`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setJobs(data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, [isSignedIn, isLoaded, navigate]);
+
+  if (loading) {
+    return <div>Loading jobs...</div>;
   }
 
-  // Si el usuario NO está conectado, el useEffect ya lo habrá redirigido a /login
-  // Por lo tanto, si llegamos a este punto, significa que isSignedIn es true
+  if (error) {
+    return <div>Error loading jobs: {error}</div>;
+  }
+
   return (
     <div>
-      {/* Aquí va el contenido que solo se muestra a usuarios conectados */}
-      <h1>Bienvenido a la página principal</h1>
-      {/* ... más información o funcionalidades para usuarios conectados ... */}
+      <h1>Job Listings</h1>
+      {jobs.map(job => (
+        <div key={job._id}>
+          {job.company} - {job.role}
+        </div>
+      ))}
     </div>
   );
 };
 
-export default Home;
+export default HomePage;
